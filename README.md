@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<p align="center">
+  <h1 align="center">thesvg</h1>
+  <p align="center">The Open SVG Brand Library</p>
+</p>
 
-## Getting Started
+<p align="center">
+  <a href="https://thesvg.org">Website</a> -
+  <a href="#api">API</a> -
+  <a href="#submit-an-icon">Submit an Icon</a>
+</p>
 
-First, run the development server:
+---
+
+**3,800+ brand SVGs** in one place. Search, preview, copy. Free, open-source, community-driven.
+
+No gatekeeping - every brand deserves a place.
+
+## Features
+
+- **3,800+ brand icons** with multiple variants (color, mono, light, dark, wordmark)
+- **Instant search** with fuzzy matching (Cmd+K / Ctrl+K)
+- **One-click copy** as SVG, JSX, Vue, CDN URL, or Data URI
+- **REST API** for programmatic access
+- **SSG detail pages** for every icon with SEO metadata
+- **Dark/light theme** support
+- **Gradient SVG support** - not just flat colors
+
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+git clone https://github.com/glincker/thesvg.git
+cd thesvg
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 to browse icons.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All endpoints return JSON.
 
-## Learn More
+### Search icons
 
-To learn more about Next.js, take a look at the following resources:
+```
+GET /api/icons?q=github&category=Devtool&limit=10&offset=0
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Returns `{ total, offset, limit, icons: [...] }`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Get single icon
 
-## Deploy on Vercel
+```
+GET /api/icons/github
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Returns full icon entry with all variants and metadata.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### List categories
+
+```
+GET /api/categories
+```
+
+Returns `{ categories: [{ name, count }] }`
+
+### CDN URLs
+
+Every icon is available via direct URL:
+
+```
+https://thesvg.org/icons/{slug}/default.svg
+https://thesvg.org/icons/{slug}/mono.svg
+https://thesvg.org/icons/{slug}/light.svg
+https://thesvg.org/icons/{slug}/dark.svg
+```
+
+## Icon Variants
+
+| Variant | Description |
+|---------|-------------|
+| `default` | Primary variant (always present) |
+| `mono` | Monochrome single-color |
+| `light` | Optimized for light backgrounds |
+| `dark` | Optimized for dark backgrounds |
+| `wordmark` | Text logo variant |
+| `wordmarkLight` | Wordmark for light backgrounds |
+| `wordmarkDark` | Wordmark for dark backgrounds |
+
+## Submit an Icon
+
+Every brand deserves a place. No gatekeeping.
+
+1. Fork this repo
+2. Add SVG files to `public/icons/{slug}/` (at minimum `default.svg`)
+3. Add an entry to `src/data/icons.json`
+4. Run `pnpm build` to validate
+5. Open a pull request
+
+### SVG requirements
+
+- Valid SVG/XML markup
+- Under 10KB file size
+- No embedded scripts or external references
+- `viewBox` attribute present
+- Gradients and multi-color SVGs welcome
+- You have the right to redistribute the icon
+
+## Tech Stack
+
+- [Next.js 15](https://nextjs.org) - App Router with SSG
+- [Tailwind CSS v4](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com)
+- [Fuse.js](https://fusejs.io) - Client-side fuzzy search
+- [Vercel](https://vercel.com) - Hosting
+
+## License
+
+MIT
