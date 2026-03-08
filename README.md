@@ -153,8 +153,9 @@ Base URL: `https://thesvg.org`
 |---------|-------------|--------|
 | [`thesvg`](https://www.npmjs.com/package/thesvg) | All icons, one package | Published |
 | [`@thesvg/icons`](https://www.npmjs.com/package/@thesvg/icons) | Core icon data | Published |
-| `@thesvg/react` | React components | Coming soon |
-| `@thesvg/cli` | CLI tool | Coming soon |
+| [`@thesvg/react`](https://www.npmjs.com/package/@thesvg/react) | 3,847 typed React components | Published |
+| [`@thesvg/cli`](https://www.npmjs.com/package/@thesvg/cli) | CLI tool (`npx @thesvg/cli add github`) | Published |
+| [`@thesvg/mcp-server`](https://www.npmjs.com/package/@thesvg/mcp-server) | MCP server for Claude/Cursor/Windsurf | Published |
 
 ## Contributing
 

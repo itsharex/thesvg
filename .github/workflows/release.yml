@@ -34,6 +34,10 @@ jobs:
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
       release_type: ${{ steps.check.outputs.release_type }}
+      changed_icons: ${{ steps.changes.outputs.icons }}
+      changed_cli: ${{ steps.changes.outputs.cli }}
+      changed_mcp: ${{ steps.changes.outputs.mcp }}
+      changed_react: ${{ steps.changes.outputs.react }}
 
     steps:
       - uses: actions/checkout@v4
@@ -85,6 +89,58 @@ jobs:
             echo "No releasable commits found"
           fi
 
+      - name: Detect changed packages
+        id: changes
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          DIFF_BASE="${LAST_TAG:-HEAD~20}"
+
+          # Check which packages have file changes since last tag
+          # icons: changes to icon data, build scripts, or the icons source
+          if git diff --name-only "$DIFF_BASE"..HEAD | grep -qE '^(packages/icons/|src/data/icons\.json|public/icons/)'; then
+            echo "icons=true" >> $GITHUB_OUTPUT
+            echo "Changed: icons"
+          else
+            echo "icons=false" >> $GITHUB_OUTPUT
+            echo "Unchanged: icons"
+          fi
+
+          # cli: changes to CLI source code
+          if git diff --name-only "$DIFF_BASE"..HEAD | grep -qE '^packages/cli/'; then
+            echo "cli=true" >> $GITHUB_OUTPUT
+            echo "Changed: cli"
+          else
+            echo "cli=false" >> $GITHUB_OUTPUT
+            echo "Unchanged: cli"
+          fi
+
+          # mcp: changes to MCP server source
+          if git diff --name-only "$DIFF_BASE"..HEAD | grep -qE '^packages/mcp/'; then
+            echo "mcp=true" >> $GITHUB_OUTPUT
+            echo "Changed: mcp"
+          else
+            echo "mcp=false" >> $GITHUB_OUTPUT
+            echo "Unchanged: mcp"
+          fi
+
+          # react: changes to react package or icon data (react rebuilds from icons.json)
+          if git diff --name-only "$DIFF_BASE"..HEAD | grep -qE '^(packages/react/|src/data/icons\.json|public/icons/)'; then
+            echo "react=true" >> $GITHUB_OUTPUT
+            echo "Changed: react"
+          else
+            echo "react=false" >> $GITHUB_OUTPUT
+            echo "Unchanged: react"
+          fi
+
+          # For manual dispatch, release everything
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "icons=true" >> $GITHUB_OUTPUT
+            echo "cli=true" >> $GITHUB_OUTPUT
+            echo "mcp=true" >> $GITHUB_OUTPUT
+            echo "react=true" >> $GITHUB_OUTPUT
+            echo "Manual dispatch: releasing all packages"
+          fi
+
   release:
     name: Release
     runs-on: ubuntu-latest
@@ -115,30 +171,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build icons
+      # --- Icons (always bumped as the version source) ---
+      - name: Build & validate icons
+        if: needs.detect-release.outputs.changed_icons == 'true'
         working-directory: packages/icons
-        run: npm run build
-
-      - name: Security audit
-        working-directory: packages/icons
-        run: npm run audit
-
-      - name: Validate dist
-        working-directory: packages/icons
-        run: npm run validate
+        run: |
+          npm run build
+          npm run audit
+          npm run validate
 
       - name: Bump version
         id: bump
         run: |
           RELEASE_TYPE="${{ needs.detect-release.outputs.release_type }}"
+          CHANGED_ICONS="${{ needs.detect-release.outputs.changed_icons }}"
+          CHANGED_CLI="${{ needs.detect-release.outputs.changed_cli }}"
+          CHANGED_MCP="${{ needs.detect-release.outputs.changed_mcp }}"
+          CHANGED_REACT="${{ needs.detect-release.outputs.changed_react }}"
 
-          # Bump @thesvg/icons
+          # Icons + thesvg wrapper always bump together (version source of truth)
           cd packages/icons
           NEW_VERSION=$(npm version "$RELEASE_TYPE" --no-git-tag-version | sed 's/^v//')
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Bumped @thesvg/icons to: $NEW_VERSION"
 
-          # Bump thesvg wrapper to match
           cd ../thesvg
           npm version "$NEW_VERSION" --no-git-tag-version
           node -e "
@@ -148,38 +204,57 @@ jobs:
           "
           echo "Bumped thesvg to: $NEW_VERSION"
 
-          # Bump @thesvg/cli
-          cd ../cli
-          npm version "$NEW_VERSION" --no-git-tag-version
-          echo "Bumped @thesvg/cli to: $NEW_VERSION"
+          # Only bump packages that changed
+          if [ "$CHANGED_CLI" = "true" ]; then
+            cd ../cli
+            npm version "$NEW_VERSION" --no-git-tag-version
+            echo "Bumped @thesvg/cli to: $NEW_VERSION"
+          fi
 
-          # Bump @thesvg/mcp-server
-          cd ../mcp
-          npm version "$NEW_VERSION" --no-git-tag-version
-          echo "Bumped @thesvg/mcp-server to: $NEW_VERSION"
+          if [ "$CHANGED_MCP" = "true" ]; then
+            cd "$GITHUB_WORKSPACE/packages/mcp"
+            npm version "$NEW_VERSION" --no-git-tag-version
+            echo "Bumped @thesvg/mcp-server to: $NEW_VERSION"
+          fi
 
-          # Bump @thesvg/react
-          cd ../react
-          npm version "$NEW_VERSION" --no-git-tag-version
-          echo "Bumped @thesvg/react to: $NEW_VERSION"
+          if [ "$CHANGED_REACT" = "true" ]; then
+            cd "$GITHUB_WORKSPACE/packages/react"
+            npm version "$NEW_VERSION" --no-git-tag-version
+            echo "Bumped @thesvg/react to: $NEW_VERSION"
+          fi
 
+          # Summary
+          echo ""
+          echo "=== Release Summary ==="
+          echo "Version: $NEW_VERSION ($RELEASE_TYPE)"
+          echo "icons+thesvg: always"
+          echo "cli: $CHANGED_CLI"
+          echo "mcp: $CHANGED_MCP"
+          echo "react: $CHANGED_REACT"
+
+      # --- Build changed packages ---
       - name: Build thesvg wrapper
         working-directory: packages/thesvg
         run: node scripts/build-reexports.mjs
 
       - name: Build CLI
+        if: needs.detect-release.outputs.changed_cli == 'true'
         working-directory: packages/cli
         run: npm run build
 
       - name: Build MCP server
+        if: needs.detect-release.outputs.changed_mcp == 'true'
         working-directory: packages/mcp
         run: npm run build
 
       - name: Build React components
+        if: needs.detect-release.outputs.changed_react == 'true'
         working-directory: packages/react
         run: npm run build
 
-      - name: Publish @thesvg/icons (OIDC provenance)
+      # --- Publish changed packages ---
+      - name: Publish @thesvg/icons
+        if: needs.detect-release.outputs.changed_icons == 'true'
         working-directory: packages/icons
         run: |
           VERSION=${{ steps.bump.outputs.new_version }}
@@ -187,9 +262,10 @@ jobs:
             echo "Version $VERSION already exists, skipping"
           else
             npm publish --provenance --access public
+            echo "Published @thesvg/icons@$VERSION"
           fi
 
-      - name: Publish thesvg (OIDC provenance)
+      - name: Publish thesvg
         working-directory: packages/thesvg
         run: |
           VERSION=${{ steps.bump.outputs.new_version }}
@@ -197,9 +273,11 @@ jobs:
             echo "Version $VERSION already exists, skipping"
           else
             npm publish --provenance --access public
+            echo "Published thesvg@$VERSION"
           fi
 
-      - name: Publish @thesvg/cli (OIDC provenance)
+      - name: Publish @thesvg/cli
+        if: needs.detect-release.outputs.changed_cli == 'true'
         working-directory: packages/cli
         run: |
           VERSION=${{ steps.bump.outputs.new_version }}
@@ -207,9 +285,11 @@ jobs:
             echo "Version $VERSION already exists, skipping"
           else
             npm publish --provenance --access public
+            echo "Published @thesvg/cli@$VERSION"
           fi
 
-      - name: Publish @thesvg/mcp-server (OIDC provenance)
+      - name: Publish @thesvg/mcp-server
+        if: needs.detect-release.outputs.changed_mcp == 'true'
         working-directory: packages/mcp
         run: |
           VERSION=${{ steps.bump.outputs.new_version }}
@@ -217,9 +297,11 @@ jobs:
             echo "Version $VERSION already exists, skipping"
           else
             npm publish --provenance --access public
+            echo "Published @thesvg/mcp-server@$VERSION"
           fi
 
-      - name: Publish @thesvg/react (OIDC provenance)
+      - name: Publish @thesvg/react
+        if: needs.detect-release.outputs.changed_react == 'true'
         working-directory: packages/react
         run: |
           VERSION=${{ steps.bump.outputs.new_version }}
@@ -227,15 +309,34 @@ jobs:
             echo "Version $VERSION already exists, skipping"
           else
             npm publish --provenance --access public
+            echo "Published @thesvg/react@$VERSION"
           fi
 
+      # --- Commit & tag ---
       - name: Commit version bump
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add packages/icons/package.json packages/thesvg/package.json packages/cli/package.json packages/mcp/package.json packages/react/package.json
+
+          # Stage only package.json files that were bumped
+          git add packages/icons/package.json packages/thesvg/package.json
+
+          CHANGED_CLI="${{ needs.detect-release.outputs.changed_cli }}"
+          CHANGED_MCP="${{ needs.detect-release.outputs.changed_mcp }}"
+          CHANGED_REACT="${{ needs.detect-release.outputs.changed_react }}"
+
+          [ "$CHANGED_CLI" = "true" ] && git add packages/cli/package.json
+          [ "$CHANGED_MCP" = "true" ] && git add packages/mcp/package.json
+          [ "$CHANGED_REACT" = "true" ] && git add packages/react/package.json
+
+          # Build release summary for commit message
+          PKGS="icons, thesvg"
+          [ "$CHANGED_CLI" = "true" ] && PKGS="$PKGS, cli"
+          [ "$CHANGED_MCP" = "true" ] && PKGS="$PKGS, mcp"
+          [ "$CHANGED_REACT" = "true" ] && PKGS="$PKGS, react"
+
           if ! git diff --staged --quiet; then
-            git commit -m "chore(release): v${{ steps.bump.outputs.new_version }} [skip ci]"
+            git commit -m "chore(release): v${{ steps.bump.outputs.new_version }} ($PKGS) [skip ci]"
             git push
           fi
 
@@ -253,6 +354,10 @@ jobs:
         run: |
           VERSION="${{ steps.bump.outputs.new_version }}"
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CHANGED_CLI="${{ needs.detect-release.outputs.changed_cli }}"
+          CHANGED_MCP="${{ needs.detect-release.outputs.changed_mcp }}"
+          CHANGED_REACT="${{ needs.detect-release.outputs.changed_react }}"
+          CHANGED_ICONS="${{ needs.detect-release.outputs.changed_icons }}"
 
           if [ -n "$PREV_TAG" ]; then
             FEAT=$(git log --pretty=format:"- %s" ${PREV_TAG}..HEAD | grep -E "^- feat" | head -10 || true)
@@ -286,23 +391,22 @@ jobs:
             echo "$PERF" >> release_notes.md
           fi
 
+          # Packages published section
+          echo "" >> release_notes.md
+          echo "### Packages Published" >> release_notes.md
+          [ "$CHANGED_ICONS" = "true" ] && echo "- \`@thesvg/icons@${VERSION}\`" >> release_notes.md
+          echo "- \`thesvg@${VERSION}\`" >> release_notes.md
+          [ "$CHANGED_CLI" = "true" ] && echo "- \`@thesvg/cli@${VERSION}\`" >> release_notes.md
+          [ "$CHANGED_MCP" = "true" ] && echo "- \`@thesvg/mcp-server@${VERSION}\`" >> release_notes.md
+          [ "$CHANGED_REACT" = "true" ] && echo "- \`@thesvg/react@${VERSION}\`" >> release_notes.md
+
           cat >> release_notes.md << INSTALL_EOF
 
           ### Install
           \`\`\`bash
-          # Icon data
           npm install @thesvg/icons@${VERSION}
-          # or umbrella package
+          # or
           npm install thesvg@${VERSION}
-
-          # React components
-          npm install @thesvg/react@${VERSION}
-
-          # CLI
-          npx @thesvg/cli@${VERSION} add github
-
-          # MCP server
-          npm install -g @thesvg/mcp-server@${VERSION}
           \`\`\`
 
           **Full Changelog**: https://github.com/GLINCKER/thesvg/compare/${PREV_TAG:-v0.1.0}...v${VERSION}

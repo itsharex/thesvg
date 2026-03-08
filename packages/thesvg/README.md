@@ -71,8 +71,8 @@ const dark = icon.variants["dark"];
 |---------|-------------|
 | [`thesvg`](https://www.npmjs.com/package/thesvg) | Convenience wrapper (this package) |
 | [`@thesvg/icons`](https://www.npmjs.com/package/@thesvg/icons) | Core icon data |
-| `@thesvg/react` | React components (coming soon) |
-| `@thesvg/cli` | CLI tool (coming soon) |
+| [`@thesvg/react`](https://www.npmjs.com/package/@thesvg/react) | Typed React components |
+| [`@thesvg/cli`](https://www.npmjs.com/package/@thesvg/cli) | CLI tool |
 
 ## License
 

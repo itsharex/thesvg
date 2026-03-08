@@ -68,10 +68,10 @@ const CATEGORIES: Category[] = [
       },
       {
         name: "@thesvg/react",
-        description: "React components with typed props, dark mode aware, zero config.",
-        status: "coming-soon",
-        cta: "GitHub",
-        href: "https://github.com/GLINCKER/thesvg/issues",
+        description: "3,847 typed React components. forwardRef, tree-shakeable, dark mode aware.",
+        status: "available",
+        cta: "npm",
+        href: "https://www.npmjs.com/package/@thesvg/react",
         iconSlug: "react",
       },
       {
@@ -156,10 +156,10 @@ const CATEGORIES: Category[] = [
     items: [
       {
         name: "@thesvg/cli",
-        description: "shadcn-style installer. npx thesvg add github copies the SVG.",
-        status: "coming-soon",
-        cta: "GitHub",
-        href: "https://github.com/GLINCKER/thesvg/issues",
+        description: "shadcn-style installer. npx @thesvg/cli add github copies the SVG.",
+        status: "available",
+        cta: "npm",
+        href: "https://www.npmjs.com/package/@thesvg/cli",
         iconFallback: <Terminal className="h-6 w-6 text-muted-foreground" />,
       },
       {
@@ -189,9 +189,9 @@ const CATEGORIES: Category[] = [
       {
         name: "MCP Server",
         description: "Works with Claude, Cursor, Windsurf. Fetch icons via tool calls.",
-        status: "coming-soon",
-        cta: "GitHub",
-        href: "https://github.com/GLINCKER/thesvg/issues",
+        status: "available",
+        cta: "npm",
+        href: "https://www.npmjs.com/package/@thesvg/mcp-server",
         iconSlug: "claude",
       },
       {
