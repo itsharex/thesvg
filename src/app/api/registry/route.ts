@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllIcons, getIconsByCategory } from "@/lib/icons";
+import { searchIcons } from "@/lib/search";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -11,17 +12,33 @@ const CACHE_HEADERS = {
   "Cache-Control": "public, max-age=86400, s-maxage=86400",
 };
 
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 200;
+
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
+  const query = searchParams.get("q");
   const category = searchParams.get("category");
+  const rawLimit = searchParams.get("limit");
+  const limit = Math.min(
+    rawLimit ? parseInt(rawLimit, 10) || DEFAULT_LIMIT : DEFAULT_LIMIT,
+    MAX_LIMIT
+  );
 
-  const icons = category ? getIconsByCategory(category) : getAllIcons();
+  let icons = category ? getIconsByCategory(category) : getAllIcons();
 
-  const index = icons.map((icon) => ({
+  if (query) {
+    icons = searchIcons(icons, query);
+  }
+
+  const total = icons.length;
+  const sliced = icons.slice(0, limit);
+
+  const index = sliced.map((icon) => ({
     slug: icon.slug,
     title: icon.title,
     categories: icon.categories,
@@ -31,7 +48,7 @@ export async function GET(request: NextRequest) {
   }));
 
   return NextResponse.json(
-    { count: index.length, icons: index },
+    { total, count: index.length, limit, icons: index },
     { status: 200, headers: { ...CORS_HEADERS, ...CACHE_HEADERS } }
   );
 }

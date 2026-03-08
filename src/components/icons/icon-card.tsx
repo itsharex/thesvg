@@ -82,6 +82,11 @@ export const IconCard = memo(function IconCard({
 
   const primaryCategory = icon.categories[0];
 
+  // Theme-aware variant: show light variant on light bg, dark on dark bg
+  const lightSrc = icon.variants.light || icon.variants.default;
+  const darkSrc = icon.variants.dark || icon.variants.default;
+  const needsThemeSwap = lightSrc !== darkSrc;
+
   /* ── Compact: icon-only grid ── */
   if (compact) {
     return (
@@ -105,7 +110,14 @@ export const IconCard = memo(function IconCard({
           <Heart className={cn("h-2.5 w-2.5", isFavorite && "fill-current")} />
         </div>
         <div className="icon-preview-bg flex h-10 w-10 items-center justify-center rounded-lg p-1.5">
-          <img src={icon.variants.default} alt={icon.title} className="h-full w-full object-contain" loading="lazy" decoding="async" />
+          {needsThemeSwap ? (
+            <>
+              <img src={lightSrc} alt={icon.title} className="h-full w-full object-contain dark:hidden" loading="lazy" decoding="async" />
+              <img src={darkSrc} alt={icon.title} className="hidden h-full w-full object-contain dark:block" loading="lazy" decoding="async" />
+            </>
+          ) : (
+            <img src={icon.variants.default} alt={icon.title} className="h-full w-full object-contain" loading="lazy" decoding="async" />
+          )}
         </div>
         <span className="w-full truncate text-center text-[10px] font-medium text-foreground">{icon.title}</span>
       </button>
@@ -117,7 +129,7 @@ export const IconCard = memo(function IconCard({
     <button
       type="button"
       onClick={() => onSelect(icon)}
-      className="group relative flex min-w-0 flex-col items-center rounded-xl border border-border/40 bg-card/80 transition-all duration-200 hover:border-border hover:bg-card hover:shadow-lg hover:shadow-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:hover:shadow-black/20"
+      className="group relative flex h-full min-w-0 flex-col items-center rounded-xl border border-border/40 bg-card/80 transition-all duration-200 hover:border-border hover:bg-card hover:shadow-lg hover:shadow-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:hover:shadow-black/20"
     >
       {/* Favorite toggle */}
       <div
@@ -135,29 +147,55 @@ export const IconCard = memo(function IconCard({
         <Heart className={cn("h-3.5 w-3.5", isFavorite && "fill-current")} />
       </div>
 
+      {/* Copy toast */}
+      {copied && (
+        <div className="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2 animate-fade-in-up rounded-lg bg-foreground/90 px-3 py-1.5 text-xs font-medium text-background shadow-lg backdrop-blur-sm">
+          Copied!
+        </div>
+      )}
+
       {/* Icon preview area */}
-      <div className="icon-preview-bg flex w-full items-center justify-center rounded-t-xl px-4 py-5 sm:px-6 sm:py-8">
-        <img
-          src={icon.variants.default}
-          alt={icon.title}
-          className="h-10 w-10 object-contain transition-transform duration-200 group-hover:scale-110 sm:h-12 sm:w-12"
-          loading="lazy"
-          decoding="async"
-        />
+      <div className="icon-preview-bg flex w-full flex-1 items-center justify-center rounded-t-xl px-4 py-5 sm:px-5 sm:py-6">
+        {needsThemeSwap ? (
+          <>
+            <img
+              src={lightSrc}
+              alt={icon.title}
+              className="h-9 w-9 object-contain transition-transform duration-200 group-hover:scale-110 dark:hidden sm:h-10 sm:w-10"
+              loading="lazy"
+              decoding="async"
+            />
+            <img
+              src={darkSrc}
+              alt={icon.title}
+              className="hidden h-9 w-9 object-contain transition-transform duration-200 group-hover:scale-110 dark:block sm:h-10 sm:w-10"
+              loading="lazy"
+              decoding="async"
+            />
+          </>
+        ) : (
+          <img
+            src={icon.variants.default}
+            alt={icon.title}
+            className="h-9 w-9 object-contain transition-transform duration-200 group-hover:scale-110 sm:h-10 sm:w-10"
+            loading="lazy"
+            decoding="async"
+          />
+        )}
       </div>
 
       {/* Info section */}
-      <div className="flex w-full flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 sm:px-3 sm:pt-2.5 sm:pb-2">
-        <span className="w-full truncate text-center text-xs font-medium text-foreground sm:text-[13px]">
+      <div className="flex w-full flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 sm:px-3">
+        <span className="w-full truncate text-center text-[13px] font-medium text-foreground">
           {icon.title}
         </span>
-        <span className="text-[9px] text-muted-foreground sm:text-[10px]">
+        <span className="text-[10px] text-muted-foreground/70">
           {primaryCategory || icon.slug}
         </span>
       </div>
 
       {/* Action bar */}
-      <div className="flex w-full items-center justify-center gap-0.5 border-t border-border/30 px-1.5 py-1.5 sm:gap-1 sm:px-2 sm:py-2">
+      <div className="flex w-full items-center justify-center gap-0.5 border-t border-border/20 px-1.5 py-1 sm:gap-1 sm:px-2 sm:py-1.5 dark:border-white/[0.04]">
         <div
           onClick={handleCopy}
           role="button"
@@ -170,7 +208,7 @@ export const IconCard = memo(function IconCard({
           ) : (
             <Copy className="h-3.5 w-3.5" />
           )}
-          <span className="hidden text-[10px] font-medium sm:inline">Copy</span>
+          <span className="hidden text-[11px] font-medium sm:inline">Copy</span>
         </div>
         <div
           onClick={handleDownload}

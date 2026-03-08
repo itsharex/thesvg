@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { IconEntry } from "@/lib/icons";
 import { IconCard } from "./icon-card";
 import { IconDetail } from "./icon-detail";
@@ -13,12 +13,14 @@ interface IconGridProps {
   view?: ViewMode;
 }
 
-const INITIAL_COUNT = 120;
-const LOAD_MORE_COUNT = 120;
+const INITIAL_COUNT = 60;
+const LOAD_MORE_COUNT = 60;
 
 export function IconGrid({ icons, view = "comfortable" }: IconGridProps) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
   const [selectedIcon, setSelectedIcon] = useState<IconEntry | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
 
   const visibleIcons = useMemo(
     () => icons.slice(0, visibleCount),
@@ -27,8 +29,33 @@ export function IconGrid({ icons, view = "comfortable" }: IconGridProps) {
 
   const hasMore = visibleCount < icons.length;
 
-  const handleLoadMore = useCallback(() => {
-    setVisibleCount((prev) => Math.min(prev + LOAD_MORE_COUNT, icons.length));
+  // Reset visible count when icons list changes (new search/filter)
+  useEffect(() => {
+    setVisibleCount(INITIAL_COUNT);
+  }, [icons]);
+
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingRef.current) {
+          loadingRef.current = true;
+          setVisibleCount((prev) => {
+            const next = Math.min(prev + LOAD_MORE_COUNT, icons.length);
+            // Release lock after a short delay to prevent burst loading
+            setTimeout(() => { loadingRef.current = false; }, 200);
+            return next;
+          });
+        }
+      },
+      { rootMargin: "400px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, [icons.length]);
 
   const handleSelect = useCallback((icon: IconEntry) => {
@@ -41,9 +68,20 @@ export function IconGrid({ icons, view = "comfortable" }: IconGridProps) {
 
   if (icons.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-        <p className="text-lg font-medium">No icons found</p>
-        <p className="text-sm">Try a different search term or category</p>
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 dark:bg-white/[0.04]">
+          <svg className="h-7 w-7 text-muted-foreground/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
+        </div>
+        <p className="text-base font-medium text-foreground">No icons found</p>
+        <p className="mt-1 text-sm text-muted-foreground">Try a different search term or category</p>
+        <a
+          href="/submit"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 px-4 py-2 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-500/20 dark:text-orange-400"
+        >
+          Submit this icon
+        </a>
       </div>
     );
   }
@@ -53,29 +91,18 @@ export function IconGrid({ icons, view = "comfortable" }: IconGridProps) {
       <div className={cn(
         "grid",
         view === "compact"
-          ? "grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8"
-          : "grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+          ? "grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8"
+          : "grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-5 xl:grid-cols-6"
       )}>
-        {visibleIcons.map((icon, i) => (
-          <div
-            key={icon.slug}
-            className="min-w-0 animate-fade-in-up"
-            style={{ animationDelay: `${Math.min(i * 20, 600)}ms` }}
-          >
-            <IconCard icon={icon} onSelect={handleSelect} compact={view === "compact"} />
-          </div>
+        {visibleIcons.map((icon) => (
+          <IconCard key={icon.slug} icon={icon} onSelect={handleSelect} compact={view === "compact"} />
         ))}
       </div>
 
+      {/* Infinite scroll sentinel */}
       {hasMore && (
-        <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            onClick={handleLoadMore}
-            className="rounded-lg border border-border bg-card px-6 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
-          >
-            Load more ({icons.length - visibleCount} remaining)
-          </button>
+        <div ref={sentinelRef} className="flex justify-center py-8">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground/60" />
         </div>
       )}
 

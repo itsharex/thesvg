@@ -1,10 +1,36 @@
 "use client";
 
-import { Heart, Home, Plus } from "lucide-react";
+import { useState } from "react";
+import {
+  Blocks,
+  Bot,
+  Braces,
+  ChevronRight,
+  Code,
+  Code2,
+  Grid2X2,
+  Heart,
+  Home,
+  Package,
+  Palette,
+  Plus,
+  Terminal,
+} from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+
 import { cn } from "@/lib/utils";
+
+const EXTENSION_CATEGORIES = [
+  { id: "npm", label: "Libraries & SDKs", icon: Package },
+  { id: "editors", label: "Editor Extensions", icon: Code },
+  { id: "design", label: "Design Tools", icon: Palette },
+  { id: "developer", label: "Developer Tools", icon: Terminal },
+  { id: "ai", label: "AI & Automation", icon: Bot },
+  { id: "integrations", label: "Integrations", icon: Blocks },
+  { id: "frameworks", label: "Framework Components", icon: Code2 },
+];
 
 interface SidebarProps {
   categories: { name: string; count: number }[];
@@ -25,7 +51,10 @@ export function Sidebar({
   onToggleFavorites,
   mobile,
 }: SidebarProps) {
-  const isHomeActive = !selectedCategory && !showFavorites;
+  const pathname = usePathname();
+  const isExtensionsPage = pathname === "/extensions";
+  const [extensionsExpanded, setExtensionsExpanded] = useState(isExtensionsPage);
+  const isHomeActive = !selectedCategory && !showFavorites && pathname === "/";
   const isFavoritesActive = showFavorites;
 
   function handleHomeClick() {
@@ -35,75 +64,130 @@ export function Sidebar({
     }
   }
 
+  const navItemClass =
+    "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground";
+
+  const activeClass =
+    "bg-gradient-to-r from-accent/80 to-accent/40 text-accent-foreground font-medium shadow-sm shadow-black/[0.03] dark:from-white/[0.08] dark:to-white/[0.04] dark:shadow-black/20";
+
   return (
     <aside
       className={cn(
         mobile
           ? "flex h-full w-full flex-col bg-background pt-6"
-          : "fixed top-14 left-0 z-30 hidden h-[calc(100vh-3.5rem)] w-56 flex-col border-r border-border bg-background md:flex"
+          : "fixed top-[4.25rem] left-2 z-30 hidden h-[calc(100vh-4.75rem)] w-54 flex-col rounded-2xl border border-black/[0.06] bg-background/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.03)] backdrop-blur-2xl md:flex dark:border-white/[0.08] dark:bg-black/60 dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.05)]"
       )}
     >
-      <nav className="flex flex-col gap-1 p-3">
+      <nav className="flex flex-col gap-0.5 p-3">
         <Link
           href="/"
           onClick={handleHomeClick}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
-            isHomeActive && "bg-accent text-accent-foreground"
-          )}
+          className={cn(navItemClass, isHomeActive && activeClass)}
         >
           <Home className="h-4 w-4 shrink-0" />
           Home
         </Link>
 
+        <Link
+          href="/?sort=az"
+          className={cn(navItemClass)}
+        >
+          <Grid2X2 className="h-4 w-4 shrink-0" />
+          All Icons
+        </Link>
+
         <button
           type="button"
           onClick={onToggleFavorites}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
-            isFavoritesActive && "bg-accent text-accent-foreground"
-          )}
+          className={cn(navItemClass, isFavoritesActive && activeClass)}
         >
-          <Heart className="h-4 w-4 shrink-0" />
+          <Heart className={cn("h-4 w-4 shrink-0", isFavoritesActive && "text-red-500")} />
           <span className="flex-1 text-left">Favorites</span>
           {favoriteCount > 0 && (
-            <span className="font-mono text-xs text-muted-foreground">
+            <span className="rounded-full bg-muted/80 px-1.5 font-mono text-[10px] text-muted-foreground dark:bg-white/[0.06]">
               {favoriteCount}
             </span>
           )}
         </button>
 
+        {/* Extensions - expandable */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setExtensionsExpanded((prev) => !prev)}
+            className={cn(
+              navItemClass,
+              isExtensionsPage && activeClass
+            )}
+          >
+            <Blocks className="h-4 w-4 shrink-0" />
+            <span className="flex-1 text-left">Extensions</span>
+            <ChevronRight
+              className={cn(
+                "h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-transform duration-200",
+                extensionsExpanded && "rotate-90"
+              )}
+            />
+          </button>
+
+          {extensionsExpanded && (
+            <div className="ml-3 mt-0.5 flex flex-col gap-0.5 border-l border-border/30 pl-3 dark:border-white/[0.06]">
+              {EXTENSION_CATEGORIES.map((ext) => {
+                const Icon = ext.icon;
+                return (
+                  <Link
+                    key={ext.id}
+                    href={`/extensions#${ext.id}`}
+                    className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-accent-foreground dark:hover:bg-white/[0.05]"
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                    <span className="truncate">{ext.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <Link
+          href="/api-docs"
+          className={cn(navItemClass, pathname === "/api-docs" && activeClass)}
+        >
+          <Braces className="h-4 w-4 shrink-0" />
+          API
+        </Link>
+
         <Link
           href="/submit"
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          className={cn(navItemClass, pathname === "/submit" && activeClass)}
         >
           <Plus className="h-4 w-4 shrink-0" />
           Submit
         </Link>
       </nav>
 
-      <Separator />
+      <div className="mx-3 h-px bg-gradient-to-r from-transparent via-border/60 to-transparent dark:via-white/[0.06]" />
 
-      <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
         Categories
       </p>
 
       <ScrollArea className="flex-1 overflow-hidden px-3 pb-3">
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-px">
           {categories.map((category) => (
             <button
               key={category.name}
               type="button"
               onClick={() => onCategorySelect(category.name)}
               className={cn(
-                "flex w-full items-center justify-between rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+                "flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-sm transition-all hover:bg-accent/60 hover:text-accent-foreground dark:hover:bg-white/[0.05]",
                 selectedCategory === category.name &&
                   !showFavorites &&
-                  "bg-accent text-accent-foreground font-medium"
+                  activeClass
               )}
             >
               <span className="truncate">{category.name}</span>
-              <span className="ml-2 shrink-0 font-mono text-xs text-muted-foreground">
+              <span className="ml-2 shrink-0 rounded-full bg-muted/60 px-1.5 font-mono text-[10px] text-muted-foreground/70 dark:bg-white/[0.04]">
                 {category.count}
               </span>
             </button>

@@ -17,6 +17,7 @@ import {
   Loader2,
   Terminal,
 } from "lucide-react";
+import Link from "next/link";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import type { IconEntry } from "@/lib/icons";
@@ -365,32 +366,38 @@ export function IconDetail({ icon, onClose }: IconDetailProps) {
             </div>
 
             {/* Links */}
-            {(icon.url || icon.guidelines) && (
-              <div className="flex gap-3 text-[11px]">
-                {icon.url && (
-                  <a
-                    href={icon.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    Website
-                  </a>
-                )}
-                {icon.guidelines && (
-                  <a
-                    href={icon.guidelines}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    Guidelines
-                  </a>
-                )}
-              </div>
-            )}
+            <div className="flex flex-wrap gap-3 text-[11px]">
+              <Link
+                href={`/icon/${icon.slug}`}
+                className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+                onClick={onClose}
+              >
+                <ExternalLink className="h-3 w-3" />
+                Full page
+              </Link>
+              {icon.url && (
+                <a
+                  href={icon.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Website
+                </a>
+              )}
+              {icon.guidelines && (
+                <a
+                  href={icon.guidelines}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Guidelines
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
