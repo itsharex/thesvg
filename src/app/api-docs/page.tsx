@@ -8,9 +8,15 @@ import { CodeBlock } from "@/components/api-docs/code-block";
 import { TableOfContents } from "@/components/api-docs/table-of-contents";
 
 export const metadata: Metadata = {
-  title: "API Reference",
+  title: "API Reference - Free Brand SVG API",
   description:
-    "REST API and CDN documentation for theSVG. Fetch brand icons programmatically with no authentication required.",
+    "Free REST API and CDN for brand SVG icons. Fetch 4,700+ brand logos programmatically via jsDelivr CDN. No authentication, no rate limits. Open-source icon API.",
+  openGraph: {
+    title: "API Reference - Free Brand SVG API | theSVG",
+    description:
+      "Free REST API and CDN for 4,700+ brand SVG icons. No auth required.",
+  },
+  alternates: { canonical: "https://thesvg.org/api-docs" },
 };
 
 const TOC_ITEMS = [

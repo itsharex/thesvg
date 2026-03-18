@@ -5,13 +5,15 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useSidebarStore } from "@/lib/stores/sidebar-store";
 import { useFavoritesStore } from "@/lib/stores/favorites-store";
 import { useRouter } from "next/navigation";
+import type { Collection } from "@/lib/icons";
 
 interface SidebarShellProps {
   children: React.ReactNode;
   categoryCounts: { name: string; count: number }[];
+  collections?: { name: Collection; count: number }[];
 }
 
-export function SidebarShell({ children, categoryCounts }: SidebarShellProps) {
+export function SidebarShell({ children, categoryCounts, collections = [] }: SidebarShellProps) {
   const router = useRouter();
   const sidebarOpen = useSidebarStore((s) => s.open);
   const setSidebarOpen = useSidebarStore((s) => s.setOpen);
@@ -20,6 +22,15 @@ export function SidebarShell({ children, categoryCounts }: SidebarShellProps) {
   function handleCategorySelect(category: string | null) {
     if (category) {
       router.push(`/?category=${encodeURIComponent(category)}`);
+    } else {
+      router.push("/");
+    }
+    setSidebarOpen(false);
+  }
+
+  function handleCollectionSelect(collection: Collection | null) {
+    if (collection) {
+      router.push(`/?collection=${encodeURIComponent(collection)}`);
     } else {
       router.push("/");
     }
@@ -40,6 +51,9 @@ export function SidebarShell({ children, categoryCounts }: SidebarShellProps) {
         favoriteCount={favorites.length}
         showFavorites={false}
         onToggleFavorites={handleToggleFavorites}
+        collections={collections}
+        selectedCollection={null}
+        onCollectionSelect={handleCollectionSelect}
       />
 
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -53,6 +67,9 @@ export function SidebarShell({ children, categoryCounts }: SidebarShellProps) {
             favoriteCount={favorites.length}
             showFavorites={false}
             onToggleFavorites={handleToggleFavorites}
+            collections={collections}
+            selectedCollection={null}
+            onCollectionSelect={handleCollectionSelect}
           />
         </SheetContent>
       </Sheet>

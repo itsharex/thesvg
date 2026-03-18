@@ -73,6 +73,32 @@ We use [conventional commits](https://www.conventionalcommits.org/):
 - `docs: update readme` - no release
 - `chore: maintenance` - no release
 
+## Collections
+
+theSVG organizes icons into collections. Each icon belongs to exactly one collection:
+
+| Collection | Slug prefix | Source | License |
+|------------|------------|--------|---------|
+| Brand Icons | *(none)* | Community submissions | Per-brand |
+| AWS Architecture | `aws-` | Official AWS icon package | CC-BY-ND 2.0 |
+| GCP *(planned)* | `gcp-` | Google Cloud icons | TBD |
+| Azure *(planned)* | `azure-` | Microsoft Azure icons | TBD |
+
+### Submitting brand icons
+
+Use [thesvg.org/submit](https://thesvg.org/submit) or open a PR. Brand icons go in `public/icons/{slug}/` and get `"collection": "brands"` in icons.json.
+
+### Architecture icon collections (AWS, GCP, Azure)
+
+Architecture icons are imported in bulk from official icon packages using scripts in `scripts/`. These icons are **not modified** -- they are copied as-is to comply with their respective licenses. Do not submit individual architecture icons through the submit form.
+
+To update an architecture collection (e.g., when AWS releases a new quarterly icon set):
+
+1. Download the latest official icon package
+2. Run the import script: `npx tsx scripts/import-aws-icons.ts`
+3. Verify the import: check `src/data/icons.json` and `public/icons/aws-*/`
+4. Open a PR with the updated icons
+
 ## Icon Data Structure
 
 Icons are stored in `src/data/icons.json`. Each entry:
@@ -89,7 +115,24 @@ Icons are stored in `src/data/icons.json`. Each entry:
     "mono": "/icons/github/mono.svg"
   },
   "license": "MIT",
-  "url": "https://github.com"
+  "url": "https://github.com",
+  "collection": "brands",
+  "dateAdded": "2026-03-07"
+}
+```
+
+For architecture icons, additional fields:
+
+```json
+{
+  "slug": "aws-amazon-s3",
+  "title": "Amazon S3",
+  "collection": "aws",
+  "collectionVersion": "2026-Q1",
+  "collectionMeta": {
+    "type": "service",
+    "parent": "Storage"
+  }
 }
 ```
 
@@ -121,6 +164,9 @@ All brand icons remain the property of their respective owners. Icons are
 provided for identification and development purposes only, consistent with
 nominative fair use of trademarks. thesvg is not affiliated with, endorsed by,
 or sponsored by any of the brands whose icons appear in our library.
+
+AWS Architecture Icons are distributed unmodified under CC-BY-ND 2.0. Amazon
+Web Services and all related marks are trademarks of Amazon.com, Inc.
 
 For trademark concerns, see [TRADEMARK.md](./TRADEMARK.md) or contact
 [support@glincker.com](mailto:support@glincker.com).

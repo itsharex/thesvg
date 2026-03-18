@@ -14,41 +14,72 @@ export async function generateStaticParams() {
   return icons.map((icon) => ({ slug: icon.slug }));
 }
 
+const CDN_BASE = "https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons";
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const icon = getIconBySlug(slug);
   if (!icon) return {};
 
   const variantCount = Object.values(icon.variants).filter(Boolean).length;
+  const variantNames = Object.keys(icon.variants)
+    .filter((k) => icon.variants[k as keyof typeof icon.variants])
+    .map((k) => k === "default" ? "color" : k);
   const categoryList = icon.categories.join(", ");
+  const cdnImage = `${CDN_BASE}/${slug}/default.svg`;
+
   const description =
-    `Download the ${icon.title} SVG icon for free. Available in ${variantCount} variant${variantCount !== 1 ? "s" : ""}` +
-    (categoryList ? ` - ${categoryList}.` : ".") +
-    " Copy as SVG, JSX, Vue component, CDN URL, or Data URI. Open-source.";
+    `Download the official ${icon.title} SVG icon for free. ` +
+    `${variantCount} variant${variantCount !== 1 ? "s" : ""} (${variantNames.join(", ")})` +
+    (categoryList ? ` in ${categoryList}` : "") +
+    ". Copy as SVG, JSX, Vue, CDN link, or Data URI. Export PNG at 32-512px. " +
+    `Use the ${icon.title} logo in React, Vue, or via jsDelivr CDN. Open-source brand icon library.`;
+
+  const title = `${icon.title} SVG Icon - Free Download | Official Logo SVG | theSVG`;
 
   return {
-    title: `${icon.title} SVG Icon - theSVG`,
+    title,
     description,
-    keywords: [icon.title, icon.slug, ...icon.aliases, ...icon.categories, "SVG icon", "free icon", "brand icon"],
+    keywords: [
+      icon.title,
+      icon.slug,
+      ...icon.aliases,
+      ...icon.categories,
+      `${icon.title} SVG`,
+      `${icon.title} icon`,
+      `${icon.title} logo`,
+      `${icon.title} logo SVG`,
+      `${icon.title} SVG download`,
+      `${icon.title} brand icon`,
+      `${icon.title} icon free`,
+      "SVG icon",
+      "brand icon",
+      "free SVG",
+      "logo SVG",
+      "brand logo download",
+      "official icon SVG",
+      "open source icons",
+    ],
     openGraph: {
-      title: `${icon.title} SVG Icon - theSVG`,
+      title,
       description,
       url: `https://thesvg.org/icon/${slug}`,
       type: "website",
       images: [
         {
-          url: `https://thesvg.org${icon.variants.default}`,
+          url: cdnImage,
           width: 512,
           height: 512,
-          alt: `${icon.title} icon`,
+          alt: `${icon.title} SVG icon`,
+          type: "image/svg+xml",
         },
       ],
     },
     twitter: {
       card: "summary",
-      title: `${icon.title} SVG Icon - theSVG`,
+      title,
       description,
-      images: [`https://thesvg.org${icon.variants.default}`],
+      images: [cdnImage],
     },
     alternates: {
       canonical: `https://thesvg.org/icon/${slug}`,
@@ -70,17 +101,86 @@ export default async function IconPage({ params }: PageProps) {
 
   const categoryCounts = getCategoryCounts();
 
+  const variantCount = Object.values(icon.variants).filter(Boolean).length;
+  const categoryList = icon.categories.join(", ");
+  const allKeywords = [
+    icon.title,
+    `${icon.title} SVG`,
+    `${icon.title} icon`,
+    `${icon.title} logo`,
+    ...icon.aliases,
+    ...icon.categories,
+    "SVG",
+    "icon",
+    "logo",
+    "brand",
+    "free download",
+    "open source",
+  ];
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "ImageObject",
-    name: `${icon.title} SVG Icon`,
-    description: `Free ${icon.title} SVG icon in ${Object.values(icon.variants).filter(Boolean).length} variants`,
-    contentUrl: `https://thesvg.org${icon.variants.default}`,
-    url: `https://thesvg.org/icon/${slug}`,
-    encodingFormat: "image/svg+xml",
-    license: icon.license,
-    ...(icon.url ? { sameAs: [icon.url] } : {}),
-    keywords: [icon.title, ...icon.aliases, ...icon.categories].join(", "),
+    "@graph": [
+      {
+        "@type": "ImageObject",
+        "@id": `https://thesvg.org/icon/${slug}#image`,
+        name: `${icon.title} SVG Icon`,
+        description: `Free ${icon.title} SVG brand icon. ${variantCount} variants available. Download as SVG, JSX, Vue, CDN URL, or Data URI. Export PNG at multiple sizes.`,
+        contentUrl: `${CDN_BASE}/${slug}/default.svg`,
+        thumbnailUrl: `${CDN_BASE}/${slug}/default.svg`,
+        url: `https://thesvg.org/icon/${slug}`,
+        encodingFormat: "image/svg+xml",
+        license: icon.license,
+        width: "512",
+        height: "512",
+        ...(icon.url ? { sameAs: [icon.url] } : {}),
+        keywords: allKeywords.join(", "),
+        creator: {
+          "@type": "Organization",
+          name: "theSVG",
+          url: "https://thesvg.org",
+        },
+      },
+      {
+        "@type": "WebPage",
+        "@id": `https://thesvg.org/icon/${slug}`,
+        name: `${icon.title} SVG Icon - Free Download`,
+        description: `Download the official ${icon.title} SVG icon for free. ${variantCount} variants${categoryList ? ` in ${categoryList}` : ""}. Open-source brand icon library.`,
+        url: `https://thesvg.org/icon/${slug}`,
+        primaryImageOfPage: {
+          "@id": `https://thesvg.org/icon/${slug}#image`,
+        },
+        isPartOf: {
+          "@type": "WebSite",
+          name: "theSVG",
+          url: "https://thesvg.org",
+        },
+        breadcrumb: {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "Home",
+              item: "https://thesvg.org",
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: icon.categories[0] ?? "Icons",
+              item: icon.categories[0]
+                ? `https://thesvg.org/?category=${encodeURIComponent(icon.categories[0])}`
+                : "https://thesvg.org",
+            },
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: `${icon.title} SVG Icon`,
+              item: `https://thesvg.org/icon/${slug}`,
+            },
+          ],
+        },
+      },
+    ],
   };
 
   return (

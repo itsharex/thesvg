@@ -3,7 +3,7 @@
 import { useMemo, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowDownAZ, ArrowDownZA, ArrowUpDown, Grid3X3, LayoutGrid, X } from "lucide-react";
-import type { IconEntry } from "@/lib/icons";
+import type { Collection, IconEntry } from "@/lib/icons";
 import { searchIcons } from "@/lib/search";
 import { Sidebar } from "@/components/layout/sidebar";
 import { IconGrid } from "@/components/icons/icon-grid";
@@ -20,9 +20,10 @@ interface HomeContentProps {
   categoryCounts: { name: string; count: number }[];
   count: number;
   recentIcons: IconEntry[];
+  collections: { name: Collection; count: number }[];
 }
 
-export function HomeContent({ icons, categoryCounts, count, recentIcons }: HomeContentProps) {
+export function HomeContent({ icons, categoryCounts, count, recentIcons, collections }: HomeContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sidebarOpen = useSidebarStore((s) => s.open);
@@ -37,10 +38,11 @@ export function HomeContent({ icons, categoryCounts, count, recentIcons }: HomeC
   const sortParam = searchParams.get("sort");
   const viewParam = (searchParams.get("view") || "comfortable") as "compact" | "comfortable";
   const favoritesParam = searchParams.get("favorites") === "true";
+  const collectionParam = (searchParams.get("collection") || null) as Collection | null;
 
   const query = globalQuery;
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-  const isDefaultView = !query.trim() && !categoryParam && !sortParam && !favoritesParam;
+  const isDefaultView = !query.trim() && !categoryParam && !sortParam && !favoritesParam && !collectionParam;
 
   // Sync global store from URL (e.g. shared link)
   useEffect(() => {
@@ -86,6 +88,14 @@ export function HomeContent({ icons, categoryCounts, count, recentIcons }: HomeC
     [updateUrl, setSidebarOpen]
   );
 
+  const handleCollectionSelect = useCallback(
+    (collection: Collection | null) => {
+      updateUrl({ collection, category: null, favorites: null });
+      setSidebarOpen(false);
+    },
+    [updateUrl, setSidebarOpen]
+  );
+
   const handleToggleFavorites = useCallback(() => {
     updateUrl({
       favorites: favoritesParam ? null : "true",
@@ -105,8 +115,28 @@ export function HomeContent({ icons, categoryCounts, count, recentIcons }: HomeC
     updateUrl({ view: viewParam === "compact" ? null : "compact" });
   }, [updateUrl, viewParam]);
 
+  // Filter icons by collection first, then apply other filters
+  const collectionIcons = useMemo(() => {
+    if (!collectionParam) return icons;
+    return icons.filter((icon) => icon.collection === collectionParam);
+  }, [icons, collectionParam]);
+
+  // Compute categories for the active collection
+  const activeCategoryCounts = useMemo(() => {
+    if (!collectionParam) return categoryCounts;
+    const counts = new Map<string, number>();
+    for (const icon of collectionIcons) {
+      for (const c of icon.categories) {
+        counts.set(c, (counts.get(c) || 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [collectionParam, collectionIcons, categoryCounts]);
+
   const filtered = useMemo(() => {
-    let result = icons;
+    let result = collectionIcons;
 
     // Favorites filter
     if (favoritesParam) {
@@ -135,16 +165,21 @@ export function HomeContent({ icons, categoryCounts, count, recentIcons }: HomeC
     }
 
     return result;
-  }, [icons, query, categoryParam, sortParam, favoritesParam, favorites]);
+  }, [collectionIcons, query, categoryParam, sortParam, favoritesParam, favorites]);
+
+  const activeCount = collectionParam ? collectionIcons.length : count;
 
   const sidebarContent = (
     <Sidebar
-      categories={categoryCounts}
+      categories={activeCategoryCounts}
       selectedCategory={categoryParam}
       onCategorySelect={handleCategorySelect}
       favoriteCount={favorites.length}
       showFavorites={favoritesParam}
       onToggleFavorites={handleToggleFavorites}
+      collections={collections}
+      selectedCollection={collectionParam}
+      onCollectionSelect={handleCollectionSelect}
     />
   );
 
@@ -159,12 +194,15 @@ export function HomeContent({ icons, categoryCounts, count, recentIcons }: HomeC
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <Sidebar
             mobile
-            categories={categoryCounts}
+            categories={activeCategoryCounts}
             selectedCategory={categoryParam}
             onCategorySelect={handleCategorySelect}
             favoriteCount={favorites.length}
             showFavorites={favoritesParam}
             onToggleFavorites={handleToggleFavorites}
+            collections={collections}
+            selectedCollection={collectionParam}
+            onCollectionSelect={handleCollectionSelect}
           />
         </SheetContent>
       </Sheet>
@@ -179,8 +217,10 @@ export function HomeContent({ icons, categoryCounts, count, recentIcons }: HomeC
               categoryCounts={categoryCounts}
               count={count}
               recentIcons={recentIcons}
+              collections={collections}
               onSelectIcon={() => {}}
               onCategorySelect={(cat) => updateUrl({ category: cat })}
+              onCollectionSelect={(col) => updateUrl({ collection: col })}
             />
           </div>
         ) : (
@@ -193,9 +233,9 @@ export function HomeContent({ icons, categoryCounts, count, recentIcons }: HomeC
                 <p className="flex-1 text-sm text-muted-foreground">
                   {favoritesParam
                     ? `${filtered.length} fav${filtered.length !== 1 ? "s" : ""}`
-                    : filtered.length === count
-                      ? `${count.toLocaleString()}`
-                      : `${filtered.length.toLocaleString()}/${count.toLocaleString()}`}
+                    : filtered.length === activeCount
+                      ? `${activeCount.toLocaleString()}`
+                      : `${filtered.length.toLocaleString()}/${activeCount.toLocaleString()}`}
                   {categoryParam && (
                     <span className="ml-1 font-medium text-foreground">{categoryParam}</span>
                   )}
@@ -236,8 +276,18 @@ export function HomeContent({ icons, categoryCounts, count, recentIcons }: HomeC
             </div>
 
             {/* Active filter chips */}
-            {(categoryParam || favoritesParam || query.trim()) && (
+            {(collectionParam || categoryParam || favoritesParam || query.trim()) && (
               <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-1.5 px-3 pt-2 sm:px-4">
+                {collectionParam && (
+                  <button
+                    type="button"
+                    onClick={() => updateUrl({ collection: null })}
+                    className="inline-flex items-center gap-1 rounded-full border border-orange-200/50 bg-orange-50/50 px-2.5 py-0.5 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-50 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-400"
+                  >
+                    {collectionParam === "aws" ? "AWS" : collectionParam}
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
                 {categoryParam && (
                   <button
                     type="button"
@@ -271,7 +321,7 @@ export function HomeContent({ icons, categoryCounts, count, recentIcons }: HomeC
                 <button
                   type="button"
                   onClick={() => {
-                    updateUrl({ category: null, favorites: null, q: null, sort: null });
+                    updateUrl({ collection: null, category: null, favorites: null, q: null, sort: null });
                     setGlobalQuery("");
                   }}
                   className="text-[10px] text-muted-foreground/60 transition-colors hover:text-muted-foreground"

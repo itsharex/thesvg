@@ -23,32 +23,20 @@ import type { CopyFormat } from "@/lib/copy-formats";
 import { formatSvg } from "@/lib/copy-formats";
 import { useFavoritesStore } from "@/lib/stores/favorites-store";
 import { cn } from "@/lib/utils";
+import { VARIANT_LABELS, FORMAT_BUTTONS } from "@/components/icons/shared/icon-constants";
 
 interface IconDetailProps {
   icon: IconEntry | null;
   onClose: () => void;
 }
 
-const VARIANT_LABELS: Record<string, string> = {
-  default: "Default",
-  mono: "Mono",
-  light: "Light",
-  dark: "Dark",
-  wordmark: "Wordmark",
-  wordmarkLight: "WM Light",
-  wordmarkDark: "WM Dark",
+const FORMAT_ICONS: Record<string, React.ReactNode> = {
+  svg: <Copy className="h-3 w-3" />,
+  jsx: <Code className="h-3 w-3" />,
+  vue: <FileCode2 className="h-3 w-3" />,
+  cdn: <Link2 className="h-3 w-3" />,
+  "data-uri": <Globe className="h-3 w-3" />,
 };
-
-const FORMAT_BUTTONS: {
-  value: CopyFormat;
-  label: string;
-  icon: React.ReactNode;
-}[] = [
-  { value: "svg", label: "SVG", icon: <Copy className="h-3 w-3" /> },
-  { value: "jsx", label: "JSX", icon: <Code className="h-3 w-3" /> },
-  { value: "vue", label: "Vue", icon: <FileCode2 className="h-3 w-3" /> },
-  { value: "cdn", label: "CDN", icon: <Link2 className="h-3 w-3" /> },
-];
 
 export function IconDetail({ icon, onClose }: IconDetailProps) {
   const [activeVariant, setActiveVariant] = useState("default");
@@ -300,7 +288,7 @@ export function IconDetail({ icon, onClose }: IconDetailProps) {
                   {copiedFormat === fmt.value ? (
                     <Check className="h-3 w-3" />
                   ) : (
-                    fmt.icon
+                    FORMAT_ICONS[fmt.value]
                   )}
                   {fmt.label}
                 </button>

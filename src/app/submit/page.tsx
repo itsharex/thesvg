@@ -15,8 +15,14 @@ import { SidebarShell } from "@/components/layout/sidebar-shell";
 import { SubmitForm } from "@/components/submit/submit-form";
 
 export const metadata: Metadata = {
-  title: "Submit an Icon - theSVG",
-  description: "Every brand deserves a place. Submit your brand SVG to theSVG.",
+  title: "Submit an Icon - Add Your Brand SVG",
+  description:
+    "Every brand deserves a place. Submit your brand SVG icon to theSVG, the open-source brand icon library. No gatekeeping, community-driven.",
+  openGraph: {
+    title: "Submit an Icon | theSVG",
+    description: "Submit your brand SVG to the open-source icon library.",
+  },
+  alternates: { canonical: "https://thesvg.org/submit" },
 };
 
 export default function SubmitPage() {

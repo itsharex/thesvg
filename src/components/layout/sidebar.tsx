@@ -6,6 +6,7 @@ import {
   Bot,
   Braces,
   ChevronRight,
+  Cloud,
   Code,
   Code2,
   Grid2X2,
@@ -14,11 +15,13 @@ import {
   Package,
   Palette,
   Plus,
+  Shapes,
   Terminal,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Collection } from "@/lib/icons";
 
 import { cn } from "@/lib/utils";
 
@@ -32,6 +35,11 @@ const EXTENSION_CATEGORIES = [
   { id: "frameworks", label: "Framework Components", icon: Code2 },
 ];
 
+const COLLECTION_META: Record<string, { icon: typeof Cloud; label: string }> = {
+  brands: { icon: Shapes, label: "Brand Icons" },
+  aws: { icon: Cloud, label: "AWS Architecture" },
+};
+
 interface SidebarProps {
   categories: { name: string; count: number }[];
   selectedCategory: string | null;
@@ -40,6 +48,9 @@ interface SidebarProps {
   showFavorites: boolean;
   onToggleFavorites: () => void;
   mobile?: boolean;
+  collections: { name: Collection; count: number }[];
+  selectedCollection: Collection | null;
+  onCollectionSelect: (collection: Collection | null) => void;
 }
 
 export function Sidebar({
@@ -50,15 +61,19 @@ export function Sidebar({
   showFavorites,
   onToggleFavorites,
   mobile,
+  collections,
+  selectedCollection,
+  onCollectionSelect,
 }: SidebarProps) {
   const pathname = usePathname();
   const isExtensionsPage = pathname === "/extensions";
   const [extensionsExpanded, setExtensionsExpanded] = useState(isExtensionsPage);
-  const isHomeActive = !selectedCategory && !showFavorites && pathname === "/";
+  const isHomeActive = !selectedCategory && !showFavorites && !selectedCollection && pathname === "/";
   const isFavoritesActive = showFavorites;
 
   function handleHomeClick() {
     onCategorySelect(null);
+    onCollectionSelect(null);
     if (showFavorites) {
       onToggleFavorites();
     }
@@ -94,6 +109,14 @@ export function Sidebar({
         >
           <Grid2X2 className="h-4 w-4 shrink-0" />
           All Icons
+        </Link>
+
+        <Link
+          href="/categories"
+          className={cn(navItemClass, pathname === "/categories" && activeClass)}
+        >
+          <Shapes className="h-4 w-4 shrink-0" />
+          Categories
         </Link>
 
         <button
@@ -165,6 +188,44 @@ export function Sidebar({
           Submit
         </Link>
       </nav>
+
+      {/* Collections */}
+      {collections.length > 1 && (
+        <>
+          <div className="mx-3 h-px bg-gradient-to-r from-transparent via-border/60 to-transparent dark:via-white/[0.06]" />
+
+          <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+            Collections
+          </p>
+
+          <div className="flex flex-col gap-px px-3">
+            {collections.map((col) => {
+              const meta = COLLECTION_META[col.name];
+              const Icon = meta?.icon || Shapes;
+              const isActive = selectedCollection === col.name;
+              return (
+                <button
+                  key={col.name}
+                  type="button"
+                  onClick={() => onCollectionSelect(isActive ? null : col.name)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-sm transition-all hover:bg-accent/60 hover:text-accent-foreground dark:hover:bg-white/[0.05]",
+                    isActive && activeClass
+                  )}
+                >
+                  <span className="flex items-center gap-2 truncate">
+                    <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                    {meta?.label || col.name}
+                  </span>
+                  <span className="ml-2 shrink-0 rounded-full bg-muted/60 px-1.5 font-mono text-[10px] text-muted-foreground/70 dark:bg-white/[0.04]">
+                    {col.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       <div className="mx-3 h-px bg-gradient-to-r from-transparent via-border/60 to-transparent dark:via-white/[0.06]" />
 

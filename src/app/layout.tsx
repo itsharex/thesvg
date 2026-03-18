@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Inter } from "next/font/google";
@@ -35,6 +36,14 @@ export const metadata: Metadata = {
     "free icons",
     "svg download",
     "brand svg",
+    "official brand icons",
+    "brand logo svg download",
+    "svg brand library",
+    "free svg icons",
+    "company logo svg",
+    "tech brand icons",
+    "simple icons alternative",
+    "svg logo collection",
   ],
   metadataBase: new URL("https://thesvg.org"),
   openGraph: {
@@ -101,7 +110,9 @@ export default function RootLayout({
           storageKey="thesvg-theme"
           disableTransitionOnChange
         >
-          <Header />
+          <Suspense>
+            <Header />
+          </Suspense>
           <main className="min-h-[calc(100vh-3.75rem)]">{children}</main>
           <Footer />
           <Analytics />

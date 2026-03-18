@@ -5,6 +5,7 @@ import {
   getIconCount,
   getFormattedIconCount,
   getRecentlyAddedIcons,
+  getCollections,
 } from "@/lib/icons";
 import { HomeContent } from "@/components/home-content";
 
@@ -53,6 +54,7 @@ export default function Home() {
   const categoryCounts = getCategoryCounts();
   const iconCount = getIconCount();
   const recentIcons = getRecentlyAddedIcons(12);
+  const collections = getCollections();
 
   return (
     <>
@@ -66,6 +68,7 @@ export default function Home() {
           categoryCounts={categoryCounts}
           count={iconCount}
           recentIcons={recentIcons}
+          collections={collections}
         />
       </Suspense>
     </>

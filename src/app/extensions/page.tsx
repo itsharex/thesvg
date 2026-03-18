@@ -18,9 +18,15 @@ import { getCategoryCounts, getFormattedIconCount } from "@/lib/icons";
 import { SidebarShell } from "@/components/layout/sidebar-shell";
 
 export const metadata: Metadata = {
-  title: "Extensions & Integrations",
+  title: "Extensions & Integrations - VS Code, Figma, React, CLI",
   description:
-    "Use theSVG icons everywhere - VS Code, Figma, Raycast, React, CLI, and more.",
+    "Use 4,700+ free brand SVG icons in VS Code, Figma, Raycast, React, Vue, CLI, and more. npm packages, MCP server, and CDN integrations.",
+  openGraph: {
+    title: "Extensions & Integrations | theSVG",
+    description:
+      "Use free brand SVG icons in VS Code, Figma, React, CLI, and more.",
+  },
+  alternates: { canonical: "https://thesvg.org/extensions" },
 };
 
 type Status = "available" | "coming-soon" | "community";

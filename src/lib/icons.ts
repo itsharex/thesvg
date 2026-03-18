@@ -1,5 +1,7 @@
 import iconsData from "@/data/icons.json";
 
+export type Collection = "brands" | "aws" | "gcp" | "azure" | "emojis";
+
 export interface IconEntry {
   slug: string;
   title: string;
@@ -23,12 +25,22 @@ export interface IconEntry {
   url?: string;
   guidelines?: string;
   dateAdded?: string;
+  collection: Collection;
+  collectionVersion?: string;
+  collectionMeta?: {
+    type?: string;
+    parent?: string;
+  };
 }
 
 const icons = iconsData as IconEntry[];
 
 export function getAllIcons(): IconEntry[] {
   return icons;
+}
+
+export function getIconsByCollection(collection: Collection): IconEntry[] {
+  return icons.filter((icon) => icon.collection === collection);
 }
 
 export function getIconBySlug(slug: string): IconEntry | undefined {
@@ -51,9 +63,10 @@ export function getAllCategories(): string[] {
   return [...cats].sort();
 }
 
-export function getCategoryCounts(): { name: string; count: number }[] {
+export function getCategoryCounts(collection?: Collection): { name: string; count: number }[] {
   const counts = new Map<string, number>();
-  for (const icon of icons) {
+  const source = collection ? icons.filter((i) => i.collection === collection) : icons;
+  for (const icon of source) {
     for (const c of icon.categories) {
       counts.set(c, (counts.get(c) || 0) + 1);
     }
@@ -65,6 +78,10 @@ export function getCategoryCounts(): { name: string; count: number }[] {
 
 export function getIconCount(): number {
   return icons.length;
+}
+
+export function getCollectionCount(collection: Collection): number {
+  return icons.filter((i) => i.collection === collection).length;
 }
 
 export function getFormattedIconCount(): string {
@@ -84,4 +101,14 @@ export function getVariantCount(): number {
     count += Object.values(icon.variants).filter(Boolean).length;
   }
   return count;
+}
+
+export function getCollections(): { name: Collection; count: number }[] {
+  const counts = new Map<Collection, number>();
+  for (const icon of icons) {
+    counts.set(icon.collection, (counts.get(icon.collection) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
 }

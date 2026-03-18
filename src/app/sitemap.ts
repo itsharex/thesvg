@@ -1,72 +1,82 @@
 import type { MetadataRoute } from "next";
 import { getAllIcons, getAllCategories } from "@/lib/icons";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://thesvg.org";
-  const now = new Date();
+const BASE_URL = "https://thesvg.org";
+const CDN_BASE =
+  "https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons";
 
-  // Static pages
+export default function sitemap(): MetadataRoute.Sitemap {
+  const now = new Date();
+  const icons = getAllIcons();
+  const categories = getAllCategories();
+
+  // ---- Static pages (high-value) ----
   const staticPages: MetadataRoute.Sitemap = [
     {
-      url: baseUrl,
+      url: BASE_URL,
       lastModified: now,
       changeFrequency: "daily",
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/submit`,
+      url: `${BASE_URL}/categories`,
       lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.6,
+      changeFrequency: "weekly",
+      priority: 0.9,
     },
     {
-      url: `${baseUrl}/extensions`,
+      url: `${BASE_URL}/compare`,
       lastModified: now,
       changeFrequency: "monthly",
-      priority: 0.6,
+      priority: 0.8,
     },
     {
-      url: `${baseUrl}/api-docs`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/compare`,
+      url: `${BASE_URL}/extensions`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/legal`,
+      url: `${BASE_URL}/api-docs`,
       lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.4,
+      changeFrequency: "monthly",
+      priority: 0.6,
     },
     {
-      url: `${baseUrl}/contact`,
+      url: `${BASE_URL}/submit`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${BASE_URL}/legal`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${BASE_URL}/contact`,
       lastModified: now,
       changeFrequency: "yearly",
       priority: 0.3,
     },
   ];
 
-  // Category filter pages (/?category=AI etc.)
-  const categories = getAllCategories();
+  // ---- Category filter pages ----
   const categoryPages: MetadataRoute.Sitemap = categories.map((cat) => ({
-    url: `${baseUrl}/?category=${encodeURIComponent(cat)}`,
+    url: `${BASE_URL}/?category=${encodeURIComponent(cat)}`,
     lastModified: now,
     changeFrequency: "weekly" as const,
     priority: 0.7,
   }));
 
-  // Individual icon pages
-  const icons = getAllIcons();
+  // ---- Individual icon pages (with real lastModified when available) ----
   const iconPages: MetadataRoute.Sitemap = icons.map((icon) => ({
-    url: `${baseUrl}/icon/${icon.slug}`,
-    lastModified: now,
+    url: `${BASE_URL}/icon/${icon.slug}`,
+    lastModified: icon.dateAdded ? new Date(icon.dateAdded) : now,
     changeFrequency: "monthly" as const,
     priority: 0.8,
+    images: [`${CDN_BASE}/${icon.slug}/default.svg`],
   }));
 
   return [...staticPages, ...categoryPages, ...iconPages];
