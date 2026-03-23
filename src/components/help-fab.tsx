@@ -55,6 +55,22 @@ export function HelpFab() {
   const [visibleTips, setVisibleTips] = useState<number[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const handleOpen = () => {
+    setOpen(true);
+    setClosing(false);
+    requestAnimationFrame(() => setMounted(true));
+  };
+
+  const handleClose = () => {
+    setClosing(true);
+    setMounted(false);
+    setVisibleTips([]);
+    setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+    }, 250);
+  };
+
   useEffect(() => {
     if (!open) return;
     const handleEsc = (e: KeyboardEvent) => {
@@ -73,22 +89,6 @@ export function HelpFab() {
     );
     return () => timers.forEach(clearTimeout);
   }, [mounted]);
-
-  const handleOpen = () => {
-    setOpen(true);
-    setClosing(false);
-    requestAnimationFrame(() => setMounted(true));
-  };
-
-  const handleClose = () => {
-    setClosing(true);
-    setMounted(false);
-    setVisibleTips([]);
-    setTimeout(() => {
-      setOpen(false);
-      setClosing(false);
-    }, 250);
-  };
 
   return (
     <>

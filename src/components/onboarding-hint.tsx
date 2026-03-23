@@ -9,17 +9,21 @@ export function OnboardingHint() {
   const [visible, setVisible] = useState(false);
   const [entering, setEntering] = useState(false);
 
+  const dismiss = () => {
+    setEntering(false);
+    setTimeout(() => setVisible(false), 300);
+    localStorage.setItem(STORAGE_KEY, "1");
+  };
+
   useEffect(() => {
     const dismissed = localStorage.getItem(STORAGE_KEY);
     if (dismissed) return;
 
-    // Slide in after 2.5 seconds
     const timer = setTimeout(() => {
       setVisible(true);
       requestAnimationFrame(() => setEntering(true));
     }, 2500);
 
-    // Auto-dismiss after 10 seconds
     const autoHide = setTimeout(() => {
       dismiss();
     }, 12500);
@@ -29,12 +33,6 @@ export function OnboardingHint() {
       clearTimeout(autoHide);
     };
   }, []);
-
-  const dismiss = () => {
-    setEntering(false);
-    setTimeout(() => setVisible(false), 300);
-    localStorage.setItem(STORAGE_KEY, "1");
-  };
 
   if (!visible) return null;
 
