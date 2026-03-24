@@ -107524,5 +107524,40 @@
     "url": "https://kiro.dev",
     "collection": "brands",
     "dateAdded": "2026-03-24"
+  },
+  {
+    "slug": "iflow",
+    "title": "iFlow",
+    "aliases": [],
+    "hex": "2A4AF4",
+    "categories": [
+      "DevTool",
+      "AI"
+    ],
+    "variants": {
+      "default": "/icons/iflow/default.svg"
+    },
+    "license": "Unknown",
+    "url": "https://quiver.ai/iflow",
+    "collection": "brands",
+    "dateAdded": "2026-03-24"
+  },
+  {
+    "slug": "gemini-cli",
+    "title": "Gemini CLI",
+    "aliases": [],
+    "hex": "0083FF",
+    "categories": [
+      "Google",
+      "AI",
+      "DevTool"
+    ],
+    "variants": {
+      "default": "/icons/gemini-cli/default.svg"
+    },
+    "license": "Unknown",
+    "url": "https://github.com/google-gemini/gemini-cli",
+    "collection": "brands",
+    "dateAdded": "2026-03-24"
   }
 ]
