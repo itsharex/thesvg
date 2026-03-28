@@ -2,6 +2,7 @@
 
 import { useMemo, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import posthog from "posthog-js";
 import { ArrowDownAZ, ArrowDownZA, ArrowUpDown, Grid3X3, LayoutGrid, X } from "lucide-react";
 import type { Collection, IconEntry } from "@/lib/icons";
 import { searchIcons } from "@/lib/search";
@@ -99,6 +100,7 @@ export function HomeContent({ icons, categoryCounts, count, recentIcons, collect
   const handleCollectionSelect = useCallback(
     (collection: Collection | null) => {
       setSidebarOpen(false);
+      posthog.capture("collection_switched", { collection: collection ?? "all" });
       if (collection) {
         router.push(`/collection/${collection}`);
       } else {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, Clock, Cloud, Package, Shapes, Sparkles, Zap } from "lucide-react";
+import { Anchor, ArrowRight, Clock, Cloud, Package, Shapes, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
 import type { Collection, IconEntry } from "@/lib/icons";
 import { IconCard } from "@/components/icons/icon-card";
@@ -63,6 +63,16 @@ const POPULAR_GCP_SLUGS = [
   "gcp-cloud-dns", "gcp-firestore", "gcp-memorystore",
   "gcp-cloud-monitoring", "gcp-cloud-logging", "gcp-secret-manager",
   "gcp-identity-and-access-management", "gcp-cloud-load-balancing", "gcp-apigee-api-platform",
+];
+
+/** Hand-picked popular Kubernetes slugs */
+const POPULAR_K8S_SLUGS = [
+  "k8s-deployment", "k8s-pod", "k8s-service", "k8s-ingress",
+  "k8s-configmap", "k8s-secret", "k8s-daemonset", "k8s-statefulset",
+  "k8s-cronjob", "k8s-namespace", "k8s-node", "k8s-persistentvolume",
+  "k8s-api-server", "k8s-etcd-cluster", "k8s-horizontalpodautoscaler",
+  "k8s-replicaset", "k8s-serviceaccount", "k8s-storageclass",
+  "k8s-controller-manager", "k8s-clusterrole",
 ];
 
 const COLLECTION_LABELS: Record<string, { label: string; description: string }> = {
@@ -191,6 +201,32 @@ const ALL_SLIDES = [
     collection: "gcp" as const,
     floatSlugs: POPULAR_GCP_SLUGS,
   },
+  {
+    badge: "Kubernetes",
+    badgeIcon: Anchor,
+    title: "38 Official Kubernetes Icons",
+    description: "Pods, Deployments, Services, Ingress, ConfigMaps, and more. The full CNCF Kubernetes icon set for your architecture diagrams.",
+    cta: { label: "Browse Icons", href: "#popular" },
+    ctaSecondary: { label: "All Resources", href: "#categories" },
+    gradient: "from-[#326ce5]/5 via-background to-[#326ce5]/5 dark:from-[#326ce5]/20 dark:via-background dark:to-[#326ce5]/10",
+    accent: "border-[#326ce5]/30 bg-[#326ce5]/10 text-[#326ce5] dark:border-[#326ce5]/30 dark:bg-[#326ce5]/15 dark:text-[#5b8eef]",
+    blob: "bg-[#326ce5]/10 dark:bg-[#326ce5]/5",
+    collection: "k8s" as const,
+    floatSlugs: POPULAR_K8S_SLUGS,
+  },
+  {
+    badge: "Apache 2.0 License",
+    badgeIcon: Package,
+    title: "CNCF Kubernetes Architecture Icons",
+    description: "Official icons from the Kubernetes project. Free under Apache 2.0. Use in docs, diagrams, and presentations.",
+    cta: { label: "Browse All", href: "#all" },
+    ctaSecondary: { label: "View License", href: "https://github.com/kubernetes/community/tree/master/icons" },
+    gradient: "from-[#326ce5]/5 via-background to-[#ffffff]/5 dark:from-[#326ce5]/15 dark:via-background dark:to-[#326ce5]/10",
+    accent: "border-[#326ce5]/20 bg-[#326ce5]/10 text-[#326ce5] dark:border-[#326ce5]/20 dark:bg-[#326ce5]/10 dark:text-[#5b8eef]",
+    blob: "bg-[#326ce5]/10 dark:bg-[#326ce5]/5",
+    collection: "k8s" as const,
+    floatSlugs: POPULAR_K8S_SLUGS,
+  },
 ];
 
 const SLIDE_DURATION = 6000;
@@ -259,6 +295,7 @@ export function HomeHero({
       aws: POPULAR_AWS_SLUGS,
       azure: POPULAR_AZURE_SLUGS,
       gcp: POPULAR_GCP_SLUGS,
+      k8s: POPULAR_K8S_SLUGS,
     };
     const slugs = slugMap[activeCollection] ?? POPULAR_SLUGS;
     return slugs
@@ -289,12 +326,18 @@ export function HomeHero({
       .slice(0, 12);
   }, [activeCollection, collectionIcons, recentIcons]);
 
-  const slide = collectionSlides[currentSlide % collectionSlides.length];
+  const fallbackSlide = ALL_SLIDES[0];
+  const slide = collectionSlides.length > 0
+    ? collectionSlides[currentSlide % collectionSlides.length]
+    : fallbackSlide;
   const BadgeIcon = slide.badgeIcon;
 
   // Pick 6 floating icons matching the current slide's collection
   const floatingIcons = useMemo(() => {
-    const slugs = collectionSlides[currentSlide % collectionSlides.length].floatSlugs.slice(0, 6);
+    const activeSlide = collectionSlides.length > 0
+      ? collectionSlides[currentSlide % collectionSlides.length]
+      : fallbackSlide;
+    const slugs = activeSlide.floatSlugs.slice(0, 6);
     return slugs
       .map((s) => icons.find((i) => i.slug === s))
       .filter(Boolean) as IconEntry[];

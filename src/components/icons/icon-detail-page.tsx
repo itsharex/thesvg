@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import posthog from "posthog-js";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
@@ -46,9 +47,28 @@ export function IconDetailPage({ icon, relatedIcons = [] }: IconDetailPageProps)
     s.favorites.includes(icon.slug)
   );
 
+  // Track page view once
+  const tracked = useRef(false);
+  useEffect(() => {
+    if (tracked.current) return;
+    tracked.current = true;
+    posthog.capture("icon_page_viewed", {
+      slug: icon.slug,
+      title: icon.title,
+      collection: icon.collection,
+      categories: icon.categories,
+      variant_count: variants.length,
+    });
+  }, [icon.slug, icon.title, icon.collection, icon.categories, variants.length]);
+
   // Update URL when variant changes (shareable link)
   const handleVariantSelect = useCallback((variant: string) => {
     setActiveVariant(variant);
+    posthog.capture("icon_variant_selected", {
+      slug: icon.slug,
+      variant,
+      source: "detail_page",
+    });
     const params = new URLSearchParams(searchParams.toString());
     if (variant === "default") {
       params.delete("variant");
@@ -93,6 +113,12 @@ export function IconDetailPage({ icon, relatedIcons = [] }: IconDetailPageProps)
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       setDownloaded(true);
+      posthog.capture("icon_downloaded", {
+        slug: icon.slug,
+        title: icon.title,
+        variant: activeVariant,
+        source: "detail_page",
+      });
       setTimeout(() => setDownloaded(false), 2000);
     } catch {
       window.open(currentPath, "_blank");

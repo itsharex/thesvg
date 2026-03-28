@@ -14,7 +14,7 @@ const CORS_HEADERS = {
 };
 
 const CACHE_HEADERS = {
-  "Cache-Control": "public, max-age=86400, s-maxage=86400",
+  "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=43200",
 };
 
 function readSvgFile(slug: string, variantPath: string): string | null {
